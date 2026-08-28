@@ -60,6 +60,31 @@ tl.to("#s2Title", { opacity: 0, scale: 0.85, duration: 0.33, ease: "power2.in" }
 tl.set("#s2Title", { opacity: 0 }, 5.8);  // hard kill at scene boundary
 ```
 
+## BGM: half-volume rule (worked numbers)
+
+The requirement "BGM volume = half of narration volume" fails if implemented as a bare `data-volume="0.5"` — masters differ. Measured on this machine: bundled `bgm-source.mp3` mean −10.4 dB; Edge TTS VO mean −23.0 dB. At 0.5 gain the BGM (−16.7 dB mean) would be ~6 dB LOUDER than the narration.
+
+Fix: pre-gain the BGM so its full-scale mean equals the VO mean. Then `data-volume="0.5"` (−6 dB at playback) lands the music at exactly half the narration's amplitude:
+
+```
+gain_db = vo_mean_db − bgm_mean_db        # e.g. −23.0 − (−10.4) = −12.6 dB
+```
+
+```bash
+# prep: loop-if-short, trim to TOTAL, pre-gain, 0.8s fade-in / 1.2s fade-out
+ffmpeg -y -stream_loop -1 -i assets/bgm-src.mp3 -t $TOTAL \
+  -af "volume=${GAIN}dB,afade=t=in:st=0:d=0.8,afade=t=out:st=$(python3 -c "print($TOTAL-1.2)"):d=1.2" \
+  -c:a libmp3lame -q:a 2 assets/bgm.mp3
+```
+
+```html
+<!-- embed: own track, spans the whole composition -->
+<audio id="bgm" src="assets/bgm.mp3" data-start="0" data-duration="<TOTAL>"
+       data-track-index="6" data-volume="0.5"></audio>
+```
+
+Verify in the final MP4: a known VO-gap segment measures ≈ vo_mean − 6 dB (never silent at −50 dB), and speech segments run ≈ 6 dB hotter than gaps. If a `--bgm` file is quieter than the VO, the same formula applies with a positive gain — but never push the BGM max_volume above −3 dB after gain (clipping risk).
+
 ## Known pitfalls
 
 1. **Bundled Chrome download crawls** (~20KB/s from Google). Always `export HYPERFRAMES_BROWSER_PATH` to the system Chrome before `npm run render`.

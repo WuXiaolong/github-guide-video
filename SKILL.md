@@ -1,6 +1,6 @@
 ---
 name: github-guide-video
-description: Make a sub-30-second promotional/recommendation video for a GitHub repository using HyperFrames (HTML-rendered video) with Edge TTS voiceover, with visuals precisely synced to narration. Use when the user provides a GitHub repo link and asks for a promo/recommendation/intro video, with optional --voice to pick narration style (e.g. sunny male, gentle female).
+description: Make a sub-30-second promotional/recommendation video for a GitHub repository using HyperFrames (HTML-rendered video) with Edge TTS voiceover and background music (BGM at half the narration volume), with visuals precisely synced to narration. Use when the user provides a GitHub repo link and asks for a promo/recommendation/intro video, with optional --voice to pick narration style (e.g. sunny male, gentle female) and --bgm to pick background music.
 ---
 
 # GitHub Guide Video
@@ -9,6 +9,7 @@ Turn a GitHub repo into a ≤30s narrated promo video. Params:
 
 - `--github <url>` (required): the GitHub repository link
 - `--voice <style>` (optional): narration style, see Voice table below. Default: Yunxi 阳光男声 (zh-CN-YunxiNeural)
+- `--bgm <path>` (optional): background music file. Default: the skill's bundled `assets/bgm-source.mp3`. BGM volume is always half the narration volume (see Step 5b)
 
 ## Prerequisites (verify once per session)
 
@@ -81,6 +82,33 @@ cd <workspace> && hyperframes init <repo-name>-promo --example blank
 
 Write `index.html`: scenes as `<div class="clip" data-start data-duration>` with a paused GSAP timeline registered to `window.__timelines`, and one `<audio>` per scene with `data-start`/`data-duration` set to the measured values. Authoring contract and the exact alignment example: [reference.md](reference.md).
 
+### Step 5b: Background music (always on)
+
+BGM is a core part of the deliverable, not an option. Source: `--bgm` if given, else the skill's bundled `assets/bgm-source.mp3` (copy it into the project's `assets/`).
+
+**Do NOT just embed with `data-volume="0.5"`.** Typical BGM masters are hotter than Edge TTS speech (measured: bgm −16.7 dB mean at 0.5 gain vs VO −23 dB mean), so a bare half-gain makes music LOUDER than narration. Pre-gain the BGM first so that, at half gain, it sits exactly 6 dB (half amplitude) below the narration:
+
+```bash
+# 1. measure levels (mean_volume) of VO files and the BGM source
+ffmpeg -i assets/vo1.mp3 -af volumedetect -f null - 2>&1 | grep mean_volume
+ffmpeg -i assets/bgm-src.mp3 -af volumedetect -f null - 2>&1 | grep mean_volume
+
+# 2. gain = vo_mean_db - bgm_mean_db  (e.g. -23.0 - (-10.4) = -12.6 dB)
+#    loop if short, trim to TOTAL, fade in/out, write prepped bgm
+ffmpeg -y -stream_loop -1 -i assets/bgm-src.mp3 -t $TOTAL \
+  -af "volume=${GAIN}dB,afade=t=in:st=0:d=0.8,afade=t=out:st=$(python3 -c "print($TOTAL-1.2)"):d=1.2" \
+  -c:a libmp3lame -q:a 2 assets/bgm.mp3
+```
+
+3. Embed alongside the VO elements (own track, full duration):
+
+```html
+<audio id="bgm" src="assets/bgm.mp3" data-start="0" data-duration="<TOTAL>"
+       data-track-index="6" data-volume="0.5"></audio>
+```
+
+With the pre-gain, `data-volume="0.5"` lands the BGM at literally half the VO's amplitude. Fix any `clip_media_fit` warning on the bgm element the same way as VO slots.
+
 ### Step 6: Check and fix
 
 ```bash
@@ -107,13 +135,22 @@ Mandatory flags, learned the hard way:
 
 ### Step 8: Verify audio-visual sync (mandatory)
 
-Extract speech windows and compare against scene boundaries:
+With BGM mixed in, `silencedetect` can no longer isolate speech windows. Verify against the known timeline table from Step 4 instead:
+
+1. **BGM present throughout**: no full silence anywhere — expect zero output from
 
 ```bash
-ffmpeg -i renders/<output>.mp4 -af "silencedetect=noise=-35dB:d=0.3" -f null - 2>&1 | grep silence_
+ffmpeg -i renders/<output>.mp4 -af "silencedetect=noise=-50dB:d=0.3" -f null - 2>&1 | grep silence_
 ```
 
-Each speech window must fall inside its intended scene (started ~0.25s after scene start, ended ≤0.1s before scene exit begins). Also extract 1 key frame per scene (`ffmpeg -vf "select='eq(n,<frame>)'"`) and view them. Then scan every frame's bottom band for black-bar corruption (dedup artifact — mandatory even when Step 7 flags were used):
+2. **BGM is half of VO**: pick a known VO gap (from the Step 4 table) and a known speech window; each segment's mean_volume should differ by roughly 6 dB, the gap never silent:
+
+```bash
+ffmpeg -ss <gap_start> -t 0.5 -i renders/<output>.mp4 -af volumedetect -f null - 2>&1 | grep mean_volume
+ffmpeg -ss <speech_start> -t 0.5 -i renders/<output>.mp4 -af volumedetect -f null - 2>&1 | grep mean_volume
+```
+
+3. **Visuals**: extract 1 key frame per scene (`ffmpeg -vf "select='eq(n,<frame>)'"`) and view them. Then scan every frame's bottom band for black-bar corruption (dedup artifact — mandatory even when Step 7 flags were used):
 
 ```bash
 python3 -c "
@@ -140,4 +177,4 @@ If the user names a style not in the table, pick the closest and say which voice
 
 ## Deliverables
 
-Final MP4 copied to the session outputs folder and presented to the user, plus a one-line summary of total duration and voice used.
+Final MP4 copied to the session outputs folder and presented to the user, plus a one-line summary of total duration, voice used, and BGM source (default or --bgm path).
