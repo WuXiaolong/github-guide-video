@@ -1,0 +1,85 @@
+examples:
+  - id: default-promo
+    title:
+      zh: 制作仓库推荐视频
+      en: Make a Repo Promo Video
+    description:
+      zh: 给一个 GitHub 仓库制作 30 秒以内、带口播的推荐视频
+      en: Create a sub-30s narrated promo video for a GitHub repo
+    prompt:
+      zh: |-
+        请为这个 GitHub 仓库制作一支 30 秒以内的推荐视频：
+        --github {{GitHub 仓库链接}}
+
+        要求：使用 HyperFrames 渲染画面，Edge TTS 生成口播（默认 Yunxi 阳光男声），背景音乐默认用 bgm-source.mp3 且音量为口播的一半，画面与口播逐幕精确匹配。
+      en: |-
+        Please make a sub-30-second promo video for this GitHub repository:
+        --github {{GitHub repo URL}}
+
+        Requirements: render visuals with HyperFrames, narrate with Edge TTS (default Yunxi sunny male voice), background music defaults to bgm-source.mp3 at half the narration volume, and keep visuals precisely synced to the narration scene by scene.
+  - id: custom-bgm
+    title:
+      zh: 指定背景音乐
+      en: Pick Background Music
+    description:
+      zh: 用自定义背景音乐制作仓库推荐视频，BGM 音量自动压到口播的一半
+      en: Make the repo promo video with a custom BGM track, auto-mixed at half the narration volume
+    prompt:
+      zh: |-
+        请为这个 GitHub 仓库制作一支 30 秒以内的推荐视频：
+
+        --github {{GitHub 仓库链接}}
+        --bgm {{背景音乐文件路径，如 /path/to/music.mp3}}
+
+        背景音乐音量要求是口播音频音量的一半，画面与口播完全匹配。
+      en: |-
+        Please make a sub-30-second promo video for this GitHub repository:
+
+        --github {{GitHub repo URL}}
+        --bgm {{background music file path, e.g. /path/to/music.mp3}}
+
+        The BGM volume must be half the narration volume, and visuals must match the narration exactly.
+  - id: custom-voice
+    title:
+      zh: 指定配音风格
+      en: Pick a Voice Style
+    description:
+      zh: 指定配音声线制作仓库推荐视频，如温柔女声、沉稳男声
+      en: Make the repo promo video with a chosen narration voice, e.g. gentle female or steady male
+    prompt:
+      zh: |-
+        请为这个 GitHub 仓库制作一支 30 秒以内的推荐视频：
+
+        --github {{GitHub 仓库链接}}
+        --voice {{配音风格，如：温柔女声 / 沉稳男声 / 阳光男声}}
+
+        画面与口播要求完全匹配。
+      en: |-
+        Please make a sub-30-second promo video for this GitHub repository:
+
+        --github {{GitHub repo URL}}
+        --voice {{voice style, e.g. gentle female / steady male / sunny male}}
+
+        Visuals must match the narration exactly.
+  - id: english-narration
+    title:
+      zh: 英文口播版
+      en: English Narration
+    description:
+      zh: 用英文口播为 GitHub 仓库制作推荐视频
+      en: Make the repo promo video with English narration
+    prompt:
+      zh: |-
+        请为这个 GitHub 仓库制作一支 30 秒以内的英文口播推荐视频：
+
+        --github {{GitHub 仓库链接}}
+        --voice english
+
+        画面文案用英文，口播用英文，画面与口播完全匹配。
+      en: |-
+        Please make a sub-30-second promo video for this GitHub repository with English narration:
+
+        --github {{GitHub repo URL}}
+        --voice english
+
+        On-screen text in English, narration in English, visuals precisely synced to the voiceover.
