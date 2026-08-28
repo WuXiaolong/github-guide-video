@@ -87,9 +87,12 @@ Verify in the final MP4: a known VO-gap segment measures ≈ vo_mean − 6 dB (n
 
 ## Known pitfalls
 
-1. **Bundled Chrome download crawls** (~20KB/s from Google). Always `export HYPERFRAMES_BROWSER_PATH` to the system Chrome before `npm run render`.
+1. **Bundled Chrome download crawls** (~20KB/s from Google). Always `export HYPERFRAMES_BROWSER_PATH` to the system Chrome before rendering.
 2. **edge-tts `NoAudioReceived`** on flaky networks — the helper script retries 4× and validates file size > 5KB.
 3. **MP3 container duration > decoded duration** — after trimming, probe with ffprobe and trust the checker's `clip_media_fit` correction over the container number.
 4. **Rate above +30% sounds bad** — cut script text instead.
 5. **Untrimmed TTS has ~0.3-0.5s leading silence** which would break the 0.25s offset math — always trim before measuring.
-6. **Black bottom bar (probabilistic)** — static-frame dedup (on by default) reuses a capture taken mid GPU-layer rebuild → an ~87px black band spanning seconds; multi-worker capture adds stray single black frames. Always render with `HF_STATIC_DEDUP=false hyperframes render -w 1`, then scan every frame's bottom band (`crop=1920:10:0:1070`, mean < 150 = black) before delivery. The bug is timing-dependent — another project may pass with defaults, so never trust defaults alone.
+6. **Black bottom bar (probabilistic)** — static-frame dedup (on by default) reuses a capture taken mid GPU-layer rebuild → an ~87px black band spanning seconds; multi-worker capture adds stray single black frames. Always render with `HF_STATIC_DEDUP=false hyperframes render -w 1`, then run scripts/verify_render.py's BAND check before delivery. The bug is timing-dependent — never trust defaults alone.
+7. **Per-frame verification scans are O(n²)** — one ffmpeg per frame re-decodes from frame 0: measured 0.42 s/frame early, 1.27 s/frame late → ~12 min for a 28s/838-frame video. The single-pass band scan in scripts/verify_render.py (one decode, analyze raw bytes in Python) does the same job in ~2 s. Never hand-roll the per-frame loop.
+8. **`npm run` / `npx hyperframes@<version>` costs ~34 s per call** (registry resolution over the network, plus occasional `ECOMPROMISED lock` failures) vs ~4 s for the global `hyperframes` CLI. Always call the global CLI directly for lint/check/render.
+9. **`hyperframes init` fetches over the network (~1.6 min)** — scaffold by copying the skill's cached `assets/project-template/` instead.

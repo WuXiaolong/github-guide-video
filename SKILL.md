@@ -32,11 +32,14 @@ export HYPERFRAMES_BROWSER_PATH="/Applications/Google Chrome.app/Contents/MacOS/
 
 ### Step 1: Collect repo facts
 
-Fetch the README with a hard timeout (GitHub web pages often stall; raw content usually works):
+Fetch the README with a hard timeout (GitHub web pages often stall; raw content usually works). Try raw.githubusercontent first, then fall back to the jsdelivr CDN mirror (much faster on slow GitHub connections):
 
 ```bash
-curl -sL --max-time 60 https://raw.githubusercontent.com/<owner>/<repo>/main/README.md
-# try /master/ if main 404s
+curl -sL --max-time 30 https://raw.githubusercontent.com/<owner>/<repo>/main/README.md
+# fallbacks, in order:
+curl -sL --max-time 30 https://cdn.jsdelivr.net/gh/<owner>/<repo>@main/README.md
+curl -sL --max-time 30 https://raw.githubusercontent.com/<owner>/<repo>/master/README.md
+# last: jsdelivr @master
 ```
 
 Distill 4-6 selling points: what it is, key numbers/features, install command, repo URL. The video can only carry ~3 numbers and ~1 command — pick the strongest.
@@ -54,11 +57,13 @@ Rules: write the script FIRST, then build visuals around it — never the revers
 
 ### Step 3: Generate TTS per scene
 
-One audio file per scene (never one file for the whole video — you need per-scene durations for alignment). Use the helper script:
+One audio file per scene (never one file for the whole video — you need per-scene durations for alignment). Use the helper script, and generate ALL scenes in one bash invocation (network round trips dominate; don't issue one Bash call per segment):
 
 ```bash
-bash scripts/make_vo.sh "<voice>" "+20%" "<text>" assets/vo1.mp3
-# prints the trimmed duration in seconds on the last line
+SKILL=~/.qwenworkcn/skills/github-guide-video
+bash $SKILL/scripts/make_vo.sh "<voice>" "+20%" "<scene1 text>" assets/vo1.mp3
+bash $SKILL/scripts/make_vo.sh "<voice>" "+20%" "<scene2 text>" assets/vo2.mp3
+# ... each prints the trimmed duration in seconds on the last line
 ```
 
 Retry policy is built in (network flakiness causes `NoAudioReceived`). If total speech exceeds the budget, raise the rate by +5% steps (sweet spot +15% to +25%; above +30% sounds rushed — cut script text instead).
@@ -76,8 +81,13 @@ Record the plan as a table before writing any HTML. A worked example with all ma
 
 ### Step 5: Author the composition
 
+Scaffold from the skill's cached blank template (instant) instead of `hyperframes init` (~1.6 min of network fetch):
+
 ```bash
-cd <workspace> && hyperframes init <repo-name>-promo --example blank
+SKILL=~/.qwenworkcn/skills/github-guide-video
+cp -R $SKILL/assets/project-template <workspace>/<repo-name>-promo
+cd <repo-name>-promo && mkdir -p assets renders
+# fallback if the template is missing: hyperframes init <repo-name>-promo --example blank
 ```
 
 Write `index.html`: scenes as `<div class="clip" data-start data-duration>` with a paused GSAP timeline registered to `window.__timelines`, and one `<audio>` per scene with `data-start`/`data-duration` set to the measured values. Authoring contract and the exact alignment example: [reference.md](reference.md).
@@ -111,8 +121,13 @@ With the pre-gain, `data-volume="0.5"` lands the BGM at literally half the VO's 
 
 ### Step 6: Check and fix
 
+Always call the GLOBAL `hyperframes` CLI directly — never `npm run check` / `npm run render` / `npx hyperframes@…`. The pinned-npm-script path resolves the npm registry over the network on EVERY call (~34 s overhead each, plus `ECOMPROMISED lock` errors); the global CLI starts in ~4 s.
+
+Iterate with fast lint (~10 s); run the full check (~60 s, launches Chrome for runtime validation) only ONCE, right before rendering:
+
 ```bash
-npm run check
+hyperframes lint    # iterate here until 0 errors
+hyperframes check   # once, final gate before render
 ```
 
 Fix every error before rendering. The three recurring ones:
@@ -133,34 +148,22 @@ Mandatory flags, learned the hard way:
 - `HF_STATIC_DEDUP=false` — the default-on static-frame dedup can reuse a capture taken mid GPU layer rebuild, producing full-width black bars at the bottom (~87px tall, lasting seconds). Multi-worker capture (`-w 1` off) adds stray single black frames from capture races. Dedup off + single worker rendered 625/625 clean frames at essentially the same speed (~2.3 min for a 21s video). This bug is probabilistic — another project may render clean with defaults, so never rely on defaults; always set these flags and always run the Step 8 bottom-band scan.
 - If `npm run render` fails with npm `ECOMPROMISED "Lock compromised"` (pinned npx script), call the global `hyperframes` CLI directly as shown above.
 
-### Step 8: Verify audio-visual sync (mandatory)
+### Step 8: Verify the render (mandatory — use the script, never a per-frame loop)
 
-With BGM mixed in, `silencedetect` can no longer isolate speech windows. Verify against the known timeline table from Step 4 instead:
-
-1. **BGM present throughout**: no full silence anywhere — expect zero output from
+With BGM mixed in, `silencedetect` can no longer isolate speech windows, so verify against the known timeline table from Step 4. Run all checks with the bundled script (single decode pass, ~10 s total):
 
 ```bash
-ffmpeg -i renders/<output>.mp4 -af "silencedetect=noise=-50dB:d=0.3" -f null - 2>&1 | grep silence_
+SKILL=~/.qwenworkcn/skills/github-guide-video
+python3 $SKILL/scripts/verify_render.py renders/<output>.mp4 \
+  --gap-start <a known VO gap start> --speech-start <a known speech start> \
+  --frames <one frame per scene, comma-separated> --outdir /tmp/vframes
 ```
 
-2. **BGM is half of VO**: pick a known VO gap (from the Step 4 table) and a known speech window; each segment's mean_volume should differ by roughly 6 dB, the gap never silent:
+It checks, and prints PASS/FAIL per item: (1) BAND — every frame's bottom 10px band for the dedup black-bar artifact (mandatory even with Step 7 flags; 0 dark frames required); (2) SILENCE — no ≥0.3s silence at −50 dB anywhere (BGM present throughout); (3) VOLUME — a known VO gap vs a known speech window should differ by ~6 dB and the gap must not be silent; (4) FRAMES — extracts the listed frames as PNGs; VIEW them (one per scene) before delivery. Exit code 0 = all passed.
 
-```bash
-ffmpeg -ss <gap_start> -t 0.5 -i renders/<output>.mp4 -af volumedetect -f null - 2>&1 | grep mean_volume
-ffmpeg -ss <speech_start> -t 0.5 -i renders/<output>.mp4 -af volumedetect -f null - 2>&1 | grep mean_volume
-```
+Do NOT hand-roll a per-frame scan with one ffmpeg per frame — that re-decodes the video from frame 0 every time (O(n²)): measured ~12 min for a 28s video vs ~2 s for the script's single pass.
 
-3. **Visuals**: extract 1 key frame per scene (`ffmpeg -vf "select='eq(n,<frame>)'"`) and view them. Then scan every frame's bottom band for black-bar corruption (dedup artifact — mandatory even when Step 7 flags were used):
-
-```bash
-python3 -c "
-import subprocess
-V='renders/<output>.mp4'
-dark=[n for n in range(0,625) if (lambda o: o and sum(o)/len(o)<150)(subprocess.run(['ffmpeg','-i',V,'-vf',f'select=eq(n\\\\,{n}),crop=1920:10:0:1070','-frames:v','1','-f','rawvideo','-pix_fmt','gray','-'],capture_output=True).stdout)]
-print('dark frames:',len(dark),dark[:20])"
-```
-
-Zero dark frames required. Only then deliver the MP4 to the outputs folder.
+Only when everything passes, deliver the MP4 to the outputs folder.
 
 ## Voice table
 
@@ -174,6 +177,21 @@ Zero dark frames required. Only then deliver the MP4 to the outputs folder.
 | english / en | en-US-GuyNeural (male) / en-US-JennyNeural (female) | English narration |
 
 If the user names a style not in the table, pick the closest and say which voice was used.
+
+## Timing budget (measured on this machine)
+
+Normal total for a ≤30s video is now ~6-8 min end to end. Know what each phase should cost so you can spot a stall:
+
+| Phase | Normal | Was / pitfall |
+|---|---|---|
+| README fetch | ≤30 s | stalls minutes on GitHub — use the jsdelivr fallback |
+| Scaffold | instant | `hyperframes init` was ~1.6 min — use the cached template |
+| TTS (4-6 segments) | 30-90 s | network flaky; retries built into make_vo.sh |
+| lint iterations | ~10 s each | full `check` is 60 s — lint while iterating, check once |
+| Render (via global CLI) | 2-2.5 min | `npm run render`/npx adds ~34 s of registry resolution per call |
+| verify_render.py | ~10 s | a hand-rolled per-frame scan is O(n²) — ~12 min for 28s video |
+
+While the render runs in the background, prepare the Step 4 timeline table's gap/speech timestamps for the verification command instead of sleeping.
 
 ## Deliverables
 
