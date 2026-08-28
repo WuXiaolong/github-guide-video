@@ -108,9 +108,16 @@ ffmpeg -i assets/bgm-src.mp3 -af volumedetect -f null - 2>&1 | grep mean_volume
 ffmpeg -y -stream_loop -1 -i assets/bgm-src.mp3 -t $TOTAL \
   -af "volume=${GAIN}dB,afade=t=in:st=0:d=0.8,afade=t=out:st=$(python3 -c "print($TOTAL-1.2)"):d=1.2" \
   -c:a libmp3lame -q:a 2 assets/bgm.mp3
+
+# 3. MANDATORY: measure the PREPPED file, not the prediction — fades + mp3
+#    re-encode + loop-point cost ~1-1.5 dB. If it deviates from vo_mean by
+#    more than 0.5 dB, adjust GAIN by the difference and re-run step 2 once.
+ffmpeg -i assets/bgm.mp3 -af volumedetect -f null - 2>&1 | grep mean_volume
 ```
 
-3. Embed alongside the VO elements (own track, full duration):
+`data-volume="0.5"` itself is exactly −6 dB in the render (verified empirically with a sine-wave A/B test: volume 1.0 → identical level, volume 0.5 → exactly −6.0 dB). The only things that break the half-volume target are (a) the ~1-1.5 dB prep loss above, and (b) trusting a single-window measurement in Step 8 (see below). No second-round render calibration is needed if step 3 confirms the prepped file mean ≈ VO mean.
+
+4. Embed alongside the VO elements (own track, full duration):
 
 ```html
 <audio id="bgm" src="assets/bgm.mp3" data-start="0" data-duration="<TOTAL>"
@@ -159,7 +166,7 @@ python3 $SKILL/scripts/verify_render.py renders/<output>.mp4 \
   --frames <one frame per scene, comma-separated> --outdir /tmp/vframes
 ```
 
-It checks, and prints PASS/FAIL per item: (1) BAND — every frame's bottom 10px band for the dedup black-bar artifact (mandatory even with Step 7 flags; 0 dark frames required); (2) SILENCE — no ≥0.3s silence at −50 dB anywhere (BGM present throughout); (3) VOLUME — a known VO gap vs a known speech window should differ by ~6 dB and the gap must not be silent; (4) FRAMES — extracts the listed frames as PNGs; VIEW them (one per scene) before delivery. Exit code 0 = all passed.
+It checks, and prints PASS/FAIL per item: (1) BAND — every frame's bottom 10px band for the dedup black-bar artifact (mandatory even with Step 7 flags; 0 dark frames required — but note the absolute threshold misfires on intentionally dark designs: if BAND fails on a dark scene, re-check with the relative method — bottom band vs a reference row 40-50px higher in the SAME frame, a drop >8 luma points is a real bar, equal levels is just dark design); (2) SILENCE — no ≥0.3s silence at −50 dB anywhere (BGM present throughout); (3) VOLUME — a known VO gap vs a known speech window should differ by ~6 dB and the gap must not be silent. IMPORTANT: music is dynamic — any single 0.5s window can sit ±6 dB off the BGM's whole-file mean, so a measured delta anywhere in ~4-12 dB is consistent with a CORRECT mix. The authoritative level check is the Step 5b one (prepped bgm.mp3 file mean ≈ VO file mean); do NOT re-calibrate the render gain from a single window reading; (4) FRAMES — extracts the listed frames as PNGs; VIEW them (one per scene) before delivery. Exit code 0 = all passed.
 
 Do NOT hand-roll a per-frame scan with one ffmpeg per frame — that re-decodes the video from frame 0 every time (O(n²)): measured ~12 min for a 28s video vs ~2 s for the script's single pass.
 

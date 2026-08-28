@@ -75,7 +75,15 @@ gain_db = vo_mean_db − bgm_mean_db        # e.g. −23.0 − (−10.4) = −12
 ffmpeg -y -stream_loop -1 -i assets/bgm-src.mp3 -t $TOTAL \
   -af "volume=${GAIN}dB,afade=t=in:st=0:d=0.8,afade=t=out:st=$(python3 -c "print($TOTAL-1.2)"):d=1.2" \
   -c:a libmp3lame -q:a 2 assets/bgm.mp3
+
+# THEN measure the prepped file and correct if needed (mandatory):
+ffmpeg -i assets/bgm.mp3 -af volumedetect -f null - 2>&1 | grep mean_volume
 ```
+
+Two measured facts (gbro-cover-design case, 2026-08-28):
+
+1. **`data-volume="0.5"` renders as exactly −6.0 dB** — verified with a controlled A/B test (same sine-wave file embedded at volume 1.0 and 0.5 in one composition; output means −33.1 / −39.1 dB). HyperFrames is NOT the problem. Never "fix" the mix by guessing a volume-mapping constant.
+2. **The prepped file runs ~1-1.5 dB below the predicted mean** (fades + mp3 re-encode + loop point). Measure `assets/bgm.mp3` after prep and adjust GAIN by the difference (one re-run) until file mean ≈ VO mean.
 
 ```html
 <!-- embed: own track, spans the whole composition -->
@@ -83,7 +91,7 @@ ffmpeg -y -stream_loop -1 -i assets/bgm-src.mp3 -t $TOTAL \
        data-track-index="6" data-volume="0.5"></audio>
 ```
 
-Verify in the final MP4: a known VO-gap segment measures ≈ vo_mean − 6 dB (never silent at −50 dB), and speech segments run ≈ 6 dB hotter than gaps. If a `--bgm` file is quieter than the VO, the same formula applies with a positive gain — but never push the BGM max_volume above −3 dB after gain (clipping risk).
+Verification trap: **music is dynamic**. In the gbro project the BGM at the 3.9-4.45s verification window sat 5.6 dB below its whole-file mean, so a single-window gap-vs-speech reading showed a 10+ dB delta even though the global mix was exactly 6 dB under. The authoritative level check is prepped-file mean ≈ VO mean (done at prep time, no render needed); single-window readings in the final MP4 can legitimately swing ±6 dB. Only treat the mix as broken if a gap window is silent or the delta exceeds ~12 dB. If a `--bgm` file is quieter than the VO, the same formula applies with a positive gain — but never push the BGM max_volume above −3 dB after gain (clipping risk).
 
 ## Known pitfalls
 
