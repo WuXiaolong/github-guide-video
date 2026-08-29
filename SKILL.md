@@ -1,6 +1,6 @@
 ---
 name: github-guide-video
-description: Make a sub-30-second promotional/recommendation video for a GitHub repository using HyperFrames (HTML-rendered video) with Edge TTS voiceover and background music (BGM at half the narration volume), with visuals precisely synced to narration. Use when the user provides a GitHub repo link and asks for a promo/recommendation/intro video, with optional --voice to pick narration style (e.g. sunny male, gentle female) and --bgm to pick background music.
+description: Make a sub-30-second promotional/recommendation video for a GitHub repository using HyperFrames (HTML-rendered video) with Edge TTS voiceover and background music (BGM at half the narration volume), with visuals precisely synced to narration. Use when the user provides a GitHub repo link and asks for a promo/recommendation/intro video, with optional --voice to pick narration style (e.g. sunny male, gentle female), --bgm to pick background music, and --workflow to pick a HyperFrames workflow (default product-launch-video).
 ---
 
 # GitHub Guide Video
@@ -10,6 +10,7 @@ Turn a GitHub repo into a ≤30s narrated promo video. Params:
 - `--github <url>` (required): the GitHub repository link
 - `--voice <style>` (optional): narration style, see Voice table below. Default: Yunxi 阳光男声 (zh-CN-YunxiNeural)
 - `--bgm <path>` (optional): background music file. Default: the skill's bundled `assets/bgm-source.mp3`. BGM volume is always half the narration volume (see Step 5b)
+- `--workflow <name>` (optional): HyperFrames workflow (route) that shapes scene structure and visual language. Default: `product-launch-video`. See Workflow table below. Whatever route is chosen, the skill's own hard caps stay: ≤30s total, Edge TTS narration, half-volume BGM, sync verification
 
 ## Prerequisites (verify once per session)
 
@@ -27,6 +28,23 @@ export HYPERFRAMES_BROWSER_PATH="/Applications/Google Chrome.app/Contents/MacOS/
 ```
 
 (On other machines, use the local Chrome/Chromium path.)
+
+## Workflow table (--workflow)
+
+HyperFrames ships 10 workflows (routes). Meaningful for a repo link input:
+
+| Value | Fits a repo promo? | Style |
+|---|---|---|
+| `product-launch-video` (default) | ✅ best | marketing angle: positioning, selling points, install CTA; site capture optional |
+| `motion-graphics` | ✅ | short design-led unit, kinetic type, stat hits, no-narration feel (narration kept short) |
+| `faceless-explainer` | ✅ | explain the topic with invented visuals, teaching tone |
+| `general-video` | ✅ | anything custom — the fallback |
+| `slideshow` | ✅ (if user wants a deck) | navigable deck feel instead of a linear video |
+| `pr-to-video` | ✅ (needs a PR reference) | explain one PR / code change instead of the whole repo |
+
+Not valid for a bare repo link (require other inputs — if requested, tell the user what's missing): `embedded-captions` and `talking-head-recut` (need existing footage), `music-to-video` (needs a music track as the driver), `remotion-to-hyperframes` (needs Remotion source).
+
+If the user names a workflow not in the table, pick the closest and say which was used. The route only changes scene structure, script tone, and visual language — the pipeline (Steps 1, 3-8) is identical.
 
 ## Workflow
 
@@ -46,12 +64,14 @@ Distill 4-6 selling points: what it is, key numbers/features, install command, r
 
 ### Step 2: Write the narration script
 
-Structure the video as 4-6 scenes. For a 30s video the narration budget is 25-28s of speech (leave breathing room). Scene template that works:
+Structure the video as 4-6 scenes. For a 30s video the narration budget is 25-28s of speech (leave breathing room). Default scene template (product-launch-video):
 
 1. Hook (question/pain point) — 2-4s
 2. Product name + one-line value — 4-6s
 3. 1-2 feature/stat scenes — 8-14s total
 4. Install command + repo URL (CTA) — 4-6s
+
+Adapt the template to the chosen --workflow: `motion-graphics` compresses to 3-4 scenes with punchier, shorter narration; `faceless-explainer` replaces the hook with a definition ("X 是…") and spends more time per concept; `pr-to-video` becomes problem → change walkthrough → before/after. Keep the ≤30s cap and the sync rules regardless.
 
 Rules: write the script FIRST, then build visuals around it — never the reverse. Numbers in the script must match numbers shown on screen. For acronyms spell out pauses ("P P T") so TTS reads them letter-by-letter when appropriate.
 

@@ -65,6 +65,25 @@ git clone https://github.com/WuXiaolong/github-guide-video.git "$env:USERPROFILE
 
 不指定的话，会自动用技能自带的 bgm-source.mp3。
 
+**想换视频风格（工作流）**：
+
+```
+--workflow motion-graphics
+```
+
+不同的工作流决定视频的叙事结构和画面语言。不指定时用默认的 `product-launch-video`（产品发布风：痛点开场 → 卖点 → 安装命令收尾），对绝大多数仓库都合适。可选值：
+
+| 工作流 | 风格 | 什么时候选它 |
+|---|---|---|
+| `product-launch-video`（默认） | 产品发布宣传 | 想突出定位和卖点，最通用 |
+| `motion-graphics` | 动效图形 | 想要更短更炫、节奏快的片子 |
+| `faceless-explainer` | 讲解科普 | 想把项目"是什么、怎么用"讲明白 |
+| `general-video` | 自定义 | 什么都行，兜底选项 |
+| `slideshow` | 幻灯片式 | 想要翻页演示的感觉 |
+| `pr-to-video` | PR 讲解 | 不推整个仓库，只讲某一个 PR / 代码变更（需附 PR 链接） |
+
+> HyperFrames 一共有 10 种工作流，另外 4 种（字幕嵌入、口播素材加工、音乐卡点、Remotion 移植）需要提供视频素材或音乐文件，不适合"丢个仓库链接就用"的场景，所以这里没列。
+
 ## 你会拿到什么
 
 一支 `.mp4` 文件（1920×1080，30fps，30 秒以内），典型结构：

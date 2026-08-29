@@ -39,6 +39,28 @@ examples:
         --bgm {{background music file path, e.g. /path/to/music.mp3}}
 
         The BGM volume must be half the narration volume, and visuals must match the narration exactly.
+  - id: custom-workflow
+    title:
+      zh: 指定视频风格
+      en: Pick a Video Workflow
+    description:
+      zh: 选择 HyperFrames 工作流（动效图形、讲解科普、PR 讲解等），默认产品发布风
+      en: Pick a HyperFrames workflow such as motion graphics, explainer, or PR walkthrough; defaults to product-launch-video
+    prompt:
+      zh: |-
+        请为这个 GitHub 仓库制作一支 30 秒以内的推荐视频：
+
+        --github {{GitHub 仓库链接}}
+        --workflow {{工作流，如 motion-graphics / faceless-explainer / pr-to-video}}
+
+        画面与口播完全匹配，背景音乐音量为口播的一半。
+      en: |-
+        Please make a sub-30-second promo video for this GitHub repository:
+
+        --github {{GitHub repo URL}}
+        --workflow {{workflow, e.g. motion-graphics / faceless-explainer / pr-to-video}}
+
+        Visuals must match the narration exactly; BGM at half the narration volume.
   - id: custom-voice
     title:
       zh: 指定配音风格
