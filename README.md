@@ -1,134 +1,146 @@
-# github-guide-video · GitHub 仓库推荐视频生成器
+<p align="center">
+  <a href="./README_zh.md"><img alt="中文" src="https://img.shields.io/badge/语言-中文-111111"></a>
+  <a href="./README.md"><img alt="English" src="https://img.shields.io/badge/Language-English-111111"></a>
+</p>
 
-你只需要丢一个 GitHub 链接过来，等几分钟，就能拿到一支**带口播配音和背景音乐的 30 秒以内推荐视频**（1080p MP4），画面和配音逐句对齐，适合发朋友圈、B 站、X/Twitter 或者给项目 README 当宣传素材。
+# github-guide-video · GitHub Repo Promo Video Generator
 
-## 它能做什么
+Drop in a GitHub link, wait a few minutes, and get a **sub-30-second promo video with AI voiceover and background music** (1080p MP4). Visuals are synced line-by-line to the narration — perfect for X/Twitter, Bilibili, Reddit, or embedding in your project's README.
 
-一句话：**你给仓库链接，它还你一支口播推荐视频。**
+## What It Does
 
-- 🎬 画面用 [HyperFrames](https://hyperframes.heygen.com) 渲染——所谓"写 HTML 就能出视频"，自动为你的仓库设计开场、卖点、数据、结尾四幕画面
-- 🎙️ 口播用微软 Edge TTS 生成，默认是"云希"阳光男声，也可以换温柔女声、沉稳男声等 6 种声线
-- 🎵 自动配背景音乐，且**音乐音量严格是口播的一半**，不会盖住人声
-- ✅ 每次成片都自动做"音画同步体检"：口播有没有跟上画面、音乐比例对不对、画面有没有坏帧
+In one sentence: **you give it a repo link, it gives you back a narrated promo video.**
 
-## 安装（一次就好）
+- 🎬 Visuals rendered with [HyperFrames](https://hyperframes.heygen.com) — "HTML that becomes video." It designs a hook, selling points, stats, and CTA tailored to your repo
+- 🎙️ Voiceover generated with Microsoft Edge TTS — "Yunxi" sunny male voice by default, with 5 more styles to choose from
+- 🎵 Background music added automatically, or bring your own
+- ✅ Every output passes an automated audio-visual sync check: narration timing, music ratio, frame integrity
 
-技能仓库地址：**https://github.com/WuXiaolong/github-guide-video**
+## Installation (one time)
 
-对 Agent 直接说：`帮我安装下 https://github.com/WuXiaolong/github-guide-video 这个skill`。
+Repo URL: **https://github.com/WuXiaolong/github-guide-video**
 
-或者在终端里执行一条命令，把仓库克隆到如千问办公的技能目录即可：
+### Option 1:
 
-**macOS / Linux：**
+Just tell your agent: `Install the skill at https://github.com/WuXiaolong/github-guide-video` — it handles the rest.
 
-```bash
-git clone https://github.com/WuXiaolong/github-guide-video.git ~/.qwenworkcn/skills/github-guide-video
+### Option 2:
+
+Open the repo and click:
+
+```text
+Code → Download ZIP
 ```
 
-**Windows（PowerShell）：**
+Unzip, rename the folder to `github-guide-video`, and copy it into your agent's skills directory.
 
-```powershell
-git clone https://github.com/WuXiaolong/github-guide-video.git "$env:USERPROFILE\.qwenworkcn\skills\github-guide-video"
-```
+Codex skills directory: ~/.codex/skills
+WorkBuddy skills directory: ~/.workbuddy/skills
+QwenWork skills directory: ~/.qwenworkcn/skills/
 
-装完后**重启一下千问办公**（新开会话也行），让技能被加载。之后在技能列表里就能看到它了。
+**Restart your agent** (or start a new session) afterwards so the skill loads. It will then appear in your skills list.
 
-> 国内网络如果克隆慢，可以走镜像：`git clone https://ghproxy.net/https://github.com/WuXiaolong/github-guide-video.git ~/.qwenworkcn/skills/github-guide-video`
->
-> 没装 git 的话，也可以打开仓库页面点 **Code → Download ZIP**，解压后把 `github-guide-video` 文件夹整个放进 `~/.qwenworkcn/skills/` 目录（Windows 是 `C:\Users\你的用户名\.qwenworkcn\skills\`），效果一样。
+## How to Use (really simple)
 
-更新时重新执行一次克隆命令覆盖即可（或者 `git -C ~/.qwenworkcn/skills/github-guide-video pull`）。
-
-## 怎么用（真的很简单）
-
-**最简用法**——一句话：
+**Simplest usage** — one sentence:
 
 ```
-用 github-guide-video 给 https://github.com/xxx/yyy 做个推荐视频
+Use github-guide-video to make a promo video for https://github.com/xxx/yyy
 ```
 
-然后等 6-8 分钟就好。期间不需要你做任何事。
+Wait 6-8 minutes. That's it — nothing else for you to do.
 
-**想指定配音**：
-
-```
---voice 温柔女声
-```
-
-可选声线：阳光男声（默认）、温柔女声、沉稳男声、磁性深沉、元气少女、英文（en-US 男/女声）。
-
-**想用自己的背景音乐**：
+**Pick a voice**:
 
 ```
---bgm /path/to/你的音乐.mp3
+--voice gentle female
 ```
 
-不指定的话，会自动用技能自带的 bgm-source.mp3。
+Available voices:
 
-**想换视频风格（工作流）**：
+| --voice value | Voice | Character |
+|---|---|---|
+| `sunny male` (default) | Yunxi | young, energetic — suits tech promos |
+| `gentle female` | Xiaoxiao | warm, natural, universal |
+| `steady` | Yunjian | deep, authoritative |
+| `magnetic` | Yunyang | documentary-style gravitas |
+| `lively` | Xiaoyi | bubbly, youthful |
+| `english` | en-US male/female | full English narration |
+
+**Use your own background music**:
+
+```
+--bgm /path/to/your-music.mp3
+```
+
+If omitted, the skill's bundled bgm-source.mp3 is used.
+
+**Change the video style (workflow)**:
 
 ```
 --workflow motion-graphics
 ```
 
-不同的工作流决定视频的叙事结构和画面语言。不指定时用默认的 `product-launch-video`（产品发布风：痛点开场 → 卖点 → 安装命令收尾），对绝大多数仓库都合适。可选值：
+The workflow determines the narrative structure and visual language. The default is `product-launch-video` (pain point → selling points → install CTA), which fits most repos. Options:
 
-| 工作流 | 风格 | 什么时候选它 |
+| Workflow | Style | When to pick it |
 |---|---|---|
-| `product-launch-video`（默认） | 产品发布宣传 | 想突出定位和卖点，最通用 |
-| `motion-graphics` | 动效图形 | 想要更短更炫、节奏快的片子 |
-| `faceless-explainer` | 讲解科普 | 想把项目"是什么、怎么用"讲明白 |
-| `general-video` | 自定义 | 什么都行，兜底选项 |
-| `slideshow` | 幻灯片式 | 想要翻页演示的感觉 |
-| `pr-to-video` | PR 讲解 | 不推整个仓库，只讲某一个 PR / 代码变更（需附 PR 链接） |
+| `product-launch-video` (default) | Product launch | Positioning + selling points; the most general choice |
+| `motion-graphics` | Motion graphics | Shorter, flashier, fast-paced |
+| `faceless-explainer` | Explainer | Teaching tone: what it is and how to use it |
+| `general-video` | Custom | Anything goes — the fallback |
+| `slideshow` | Slideshow | Deck-like, paginated feel |
+| `pr-to-video` | PR walkthrough | Explain one PR / code change, not the whole repo (requires a PR link) |
 
-> HyperFrames 一共有 10 种工作流，另外 4 种（字幕嵌入、口播素材加工、音乐卡点、Remotion 移植）需要提供视频素材或音乐文件，不适合"丢个仓库链接就用"的场景，所以这里没列。
+> HyperFrames ships 10 workflows in total. The other 4 (embedded captions, talking-head recut, music-to-video, Remotion porting) need existing footage or music files, so they aren't suitable for the "just drop a repo link" flow and aren't listed here.
 
-## 你会拿到什么
+## What You Get
 
-一支 `.mp4` 文件（1920×1080，30fps，30 秒以内），典型结构：
+A single `.mp4` file (1920×1080, 30fps, under 30 seconds), typically structured as:
 
-| 时间 | 画面 | 旁白在说什么 |
+| Section | Visual | Narration |
 |---|---|---|
-| 开场 | 痛点提问，比如"还在手搓 XX 吗？" | 抓住观众注意力 |
-| 中段 | 产品名 + 核心卖点/数据卡片 | 这个仓库是什么、强在哪 |
-| 结尾 | 安装命令 + 仓库地址 | 怎么用，去哪里找 |
+| Opening | Pain-point question, e.g. "Still hand-rolling X?" | Hook the viewer |
+| Middle | Product name + selling points / stat cards | What this repo is, why it's strong |
+| Ending | Install command + repo URL | How to use it, where to find it |
 
-## 背后发生了什么（不用记，仅供好奇）
+## What Happens Under the Hood (optional reading)
 
-你不用懂这些，工具会全自动完成——但如果你想了解它为什么可靠：
+You don't need to know any of this — the tool handles it all — but here's why it's reliable:
 
-1. **抓资料**：读取仓库的 README，提炼最有说服力的 3 个数字和 1 条命令（视频只有 30 秒，装不下更多）
-2. **先写稿再配图**：先生成每一段配音，用配音的真实时长来决定画面节奏——保证"念到哪，画面演到哪"
-3. **配音生成**：分幕调用 Edge TTS，网络不好会自动重试
-4. **混音**：背景音乐先做响度对齐，再压到口播一半的音量（直接减半音量会让音乐盖过人声，这是踩过坑的）
-5. **渲染 + 体检**：浏览器逐帧渲染成 MP4，随后自动检查画面坏帧、音乐全程存在、音量比例正确，全部通过才交付
+1. **Research**: reads the repo's README, distills the 3 most compelling numbers and 1 command (a 30s video can't carry more)
+2. **Script first, visuals second**: each narration segment is generated first, and its measured duration drives the visual pacing — guaranteeing "what's spoken is what's shown"
+3. **TTS**: per-scene Edge TTS calls with automatic retries on flaky networks
+4. **Mixing**: background music is loudness-aligned first, then set to half the narration volume (a naive half-gain would let the music drown the voice — a lesson learned the hard way)
+5. **Render + health check**: the browser renders frame-by-frame to MP4, then automated checks verify frame integrity, continuous music presence, and volume ratio — only a clean pass gets delivered
 
-## 常见问题
+## FAQ
 
-**Q：需要我先装什么吗？**
-一般不用。技能会自动检查 Node.js 22+、FFmpeg、HyperFrames CLI、Edge TTS，缺什么会提示你装一句命令的事。
+**Q: Do I need to install anything first?**
+Usually not. The skill auto-checks Node.js 22+, FFmpeg, the HyperFrames CLI, and Edge TTS, and tells you the one command to run if something's missing.
 
-**Q：为什么渲染要几分钟？**
-视频是浏览器逐帧"拍"出来的（30 秒视频约 900 帧），这是保证画面精确同步的代价。已经做过一轮深度优化（曾需 20+ 分钟，现在 6-8 分钟）。
+**Q: Why does rendering take a few minutes?**
+The video is "filmed" frame-by-frame by a browser (~900 frames for 30 seconds) — that's the cost of precise sync. It has been through one round of deep optimization (from 20+ minutes down to 6-8).
 
-**Q：出来的文案不满意？**
-直接说，比如"第二句改成 XXX""数据换成 star 数"，改完自动重新渲染，几分钟就好。
+**Q: I don't like the script.**
+Just say so — "change the second line to X" or "use the star count instead" — and it re-renders in minutes.
 
-**Q：支持英文仓库吗？**
-支持。仓库内容是英文也能做成中文口播；想整支英文口播就加 `--voice english`。
+**Q: Does it work with English repos?**
+Yes. English repo content still gets a Chinese voiceover by default; add `--voice english` for a fully English narration.
 
-## 文件说明（面向开发者/贡献者）
+## File Layout (for developers/contributors)
 
 ```
 github-guide-video/
-├── SKILL.md              # 核心指令：给 AI 执行者的完整工作流程（8 步）
-├── reference.md          # 进阶参考：编写契约、音画同步公式、踩坑记录
-├── .skill-metadata.yaml  # 推荐查询（中英双语）
+├── README.md              # English docs
+├── README_zh.md           # Chinese docs
+├── SKILL.md               # Core instructions: the full 8-step workflow for the AI agent
+├── reference.md           # Advanced reference: authoring contract, sync formulas, pitfalls
+├── .skill-metadata.yaml   # Recommended queries (bilingual)
 ├── assets/
-│   ├── bgm-source.mp3    # 默认背景音乐素材
-│   └── project-template/ # 缓存的空白项目模板（免去网络初始化）
+│   ├── bgm-source.mp3     # Default background music
+│   └── project-template/  # Cached blank project template (skips network init)
 └── scripts/
-    ├── make_vo.sh        # TTS 生成：自动重试 + 裁静音 + 输出精确时长
-    └── verify_render.py  # 成片体检：黑边/静音/音量比/关键帧，单遍解码
+    ├── make_vo.sh         # TTS generator: auto-retry + silence trim + exact duration output
+    └── verify_render.py   # Render health check: black bars / silence / volume ratio / key frames, single pass
 ```
