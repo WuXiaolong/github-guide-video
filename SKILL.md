@@ -80,9 +80,8 @@ Rules: write the script FIRST, then build visuals around it — never the revers
 One audio file per scene (never one file for the whole video — you need per-scene durations for alignment). Use the helper script, and generate ALL scenes in one bash invocation (network round trips dominate; don't issue one Bash call per segment):
 
 ```bash
-SKILL=~/.qwenworkcn/skills/github-guide-video
-bash $SKILL/scripts/make_vo.sh "<voice>" "+20%" "<scene1 text>" assets/vo1.mp3
-bash $SKILL/scripts/make_vo.sh "<voice>" "+20%" "<scene2 text>" assets/vo2.mp3
+bash {skill_dir}/scripts/make_vo.sh "<voice>" "+20%" "<scene1 text>" assets/vo1.mp3
+bash {skill_dir}/scripts/make_vo.sh "<voice>" "+20%" "<scene2 text>" assets/vo2.mp3
 # ... each prints the trimmed duration in seconds on the last line
 ```
 
@@ -104,8 +103,7 @@ Record the plan as a table before writing any HTML. A worked example with all ma
 Scaffold from the skill's cached blank template (instant) instead of `hyperframes init` (~1.6 min of network fetch):
 
 ```bash
-SKILL=~/.qwenworkcn/skills/github-guide-video
-cp -R $SKILL/assets/project-template <workspace>/<repo-name>-promo
+cp -R {skill_dir}/assets/project-template <workspace>/<repo-name>-promo
 cd <repo-name>-promo && mkdir -p assets renders
 # fallback if the template is missing: hyperframes init <repo-name>-promo --example blank
 ```
@@ -180,8 +178,7 @@ Mandatory flags, learned the hard way:
 With BGM mixed in, `silencedetect` can no longer isolate speech windows, so verify against the known timeline table from Step 4. Run all checks with the bundled script (single decode pass, ~10 s total):
 
 ```bash
-SKILL=~/.qwenworkcn/skills/github-guide-video
-python3 $SKILL/scripts/verify_render.py renders/<output>.mp4 \
+python3 {skill_dir}/scripts/verify_render.py renders/<output>.mp4 \
   --gap-start <a known VO gap start> --speech-start <a known speech start> \
   --frames <one frame per scene, comma-separated> --outdir /tmp/vframes
 ```
